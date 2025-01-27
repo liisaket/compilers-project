@@ -4,18 +4,28 @@ import re
 
 TokenType = Literal["int_literal", "identifier", "operator", "punctuation", "end"]
 
+L = object()
+
 @dataclass(frozen=True)
 class Location:
   file: str
-  line: str
-  column: str
+  line: int
+  column: int
+
+  def __eq__(self, value):
+    if value == L:
+      return True
+    return (self.file, self.line, self.column) == (value.file, value.line, value.column)
+  
+class TestLocation:
+  def __eq__(self, value):
+    pass
 
 @dataclass(frozen=True)
 class Token:
   type: TokenType
   text: str
-  #loc: Location
-
+  loc: Location
 
 def tokenize(source_code: str) -> list[Token]:
   tokens = {
@@ -27,17 +37,21 @@ def tokenize(source_code: str) -> list[Token]:
     re.compile(r"#|//.*"): "comment"
   }
 
-  position = 0
   result: list[Token] = []
+  position = 0
 
   while position < len(source_code):
     for k, v in tokens.items():
       match = k.match(source_code, position)
       if match != None:
         if v not in ["whitespace", "comment"]:
+          line = source_code.count("\n", 0, match.start()) + 1
+          last_newline = source_code.rfind("\n", 0, match.start())
+          column = (match.start() - last_newline) if last_newline != -1 else (match.start() + 1)  
           result.append(Token(
           type=tokens[k],
-          text=source_code[position:match.end()]
+          text=source_code[position:match.end()],
+          loc=Location(__file__, line, column)
         ))
         position = match.end()
 
