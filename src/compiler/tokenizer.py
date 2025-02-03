@@ -29,32 +29,38 @@ class Token:
 
 def tokenize(source_code: str) -> list[Token]:
   tokens = {
+    re.compile(r"\s+"): "whitespace",
+    re.compile(r"//.*|#.*"): "comment",
     re.compile(r"[0-9]+"): "int_literal",
     re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*"): "identifier",
     re.compile(r"==|!=|<=|>=|=|<|>|\+|\-|\*|\/"): "operator",
     re.compile(r"[(){},;]"): "punctuation",
-    re.compile(r"\s+"): "whitespace",
-    re.compile(r"#|//.*"): "comment"
   }
 
   result: list[Token] = []
+  source_len = len(source_code)
   position = 0
 
-  while position < len(source_code):
-    for k, v in tokens.items():
-      match = k.match(source_code, position)
-      if match != None:
-        if v not in ["whitespace", "comment"]:
+  while position < source_len:
+    match_found = False   # tracks if match was found at current position
+    for regex, token_type in tokens.items():
+      match = regex.match(source_code, position)
+      if match:
+        match_found = True
+        match_text = match.group(0)
+        if token_type not in ["whitespace", "comment"]:
           line = source_code.count("\n", 0, match.start()) + 1
           last_newline = source_code.rfind("\n", 0, match.start())
           column = (match.start() - last_newline) if last_newline != -1 else (match.start() + 1)  
           result.append(Token(
-          type=tokens[k],
-          text=source_code[position:match.end()],
+          type=token_type,
+          text=match_text,
           loc=Location(__file__, line, column)
         ))
         position = match.end()
+        break
 
-    #raise Exception(f"Tokenization failed near {source_code[position:match.end(): (position +10)]}")
+    if not match_found:
+      raise Exception(f"Tokenization failed near: '{source_code[position:position + 10]}' at position {position}")
 
   return result
