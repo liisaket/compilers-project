@@ -4,7 +4,7 @@ from compiler.parser import parse
 from compiler.tokenizer import tokenize
 
 
-def test_parser() -> None:
+def test_parser_basics() -> None:
   assert parse(tokenize("1 + 2")) == ast.BinaryOp(
     left=ast.Literal(1),
     op="+",
@@ -88,3 +88,64 @@ def test_empty_input_fails() -> None:
   with pytest.raises(Exception, match='input was empty'):
     parse(tokenize(""))
 
+def test_if_clauses() -> None:
+  assert parse(tokenize("if 1 then 2")) == ast.IfExpression(
+    cond=ast.Literal(1),
+    then_clause=ast.Literal(2),
+    else_clause=None
+  )
+  
+  assert parse(tokenize("if a then b + c")) == ast.IfExpression(
+    cond=ast.Identifier("a"),
+    then_clause=ast.BinaryOp(ast.Identifier("b"), "+", ast.Identifier("c")),
+    else_clause=None
+  )
+
+  assert parse(tokenize("if a then b + c else x * y")) == ast.IfExpression(
+    cond=ast.Identifier("a"),
+    then_clause=ast.BinaryOp(ast.Identifier("b"), "+", ast.Identifier("c")),
+    else_clause=ast.BinaryOp(
+      left=ast.Identifier("x"),
+      op="*",
+      right=ast.Identifier("y")
+    ),
+  )
+
+  assert parse(tokenize("1 + if true then 2 else 3")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="+",
+    right=ast.IfExpression(
+      cond=ast.Identifier("true"),  # booleans not yet implemented
+      then_clause=ast.Literal(2),
+      else_clause=ast.Literal(3)
+    )
+  )
+
+def test_nested_if_clauses() -> None:
+  assert parse(tokenize("if true then 2 else if false then 3 else 4")) == ast.IfExpression(
+    cond=ast.Identifier("true"),
+    then_clause=ast.Literal(2),
+    else_clause=ast.IfExpression(
+      cond=ast.Identifier("false"),
+      then_clause=ast.Literal(3),
+      else_clause=ast.Literal(4)
+    )
+  )
+  
+  assert parse(tokenize("if 2 + 2 then if 1 + 3 then 4 else 5 else 6")) == ast.IfExpression(
+    cond=ast.BinaryOp(
+      left=ast.Literal(2),
+      op="+",
+      right=ast.Literal(2),
+    ),
+    then_clause=ast.IfExpression(
+      cond=ast.BinaryOp(
+        left=ast.Literal(1),
+        op="+",
+        right=ast.Literal(3)),
+      then_clause=ast.Literal(4),
+      else_clause=ast.Literal(5)
+    ),
+    else_clause=ast.Literal(6)
+    )
+  

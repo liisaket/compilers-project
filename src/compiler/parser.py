@@ -49,12 +49,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_factor() -> ast.Expression:
       if peek().text == "(":
           return parse_parenthesized()
+      elif peek().text == "if":
+          return parse_if_expression()
       elif peek().type == 'int_literal':
           return parse_int_literal()
       elif peek().type == 'identifier':
           return parse_identifier()
       else:
-          raise Exception(f'{peek().loc}: expected "(", an integer literal or an identifier')
+          raise Exception(f'{peek().loc}: expected "(", "if", an integer literal or an identifier')
     
     # the parsing function for parenthesis
     def parse_parenthesized() -> ast.Expression:
@@ -93,9 +95,21 @@ def parse(tokens: list[Token]) -> ast.Expression:
             )
         return left
     
+    def parse_if_expression() -> ast.Expression:
+        consume("if")
+        cond = parse_expression()
+        consume("then")
+        then_clause = parse_expression()
+        if peek().text == "else":
+            consume("else")
+            else_clause =parse_expression()
+        else:
+            else_clause = None
+        return ast.IfExpression(cond, then_clause, else_clause)
+    
     result = parse_expression()
 
-    # Make sure the entire input is always parsed.
+    # Make sure the entire input is always parsed. Don’t allow garbage at the end of the input.
     if peek().type != 'end':
         raise Exception(f'{peek().loc}: unexpected token "{peek().text}"')
 
