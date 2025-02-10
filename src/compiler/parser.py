@@ -43,7 +43,24 @@ def parse(tokens: list[Token]) -> ast.Expression:
         if peek().type != 'identifier':
             raise Exception(f'{peek().loc}: expected an identifier')
         token = consume()
+        if peek().text == "(":
+            return parse_function_call(ast.Identifier(token.text))
         return ast.Identifier(token.text)
+    
+    def parse_function_call(function_name: str) -> ast.FunctionCall:
+        args = []
+        consume('(')
+        if peek().text == ")":
+            consume(")")
+            return ast.FunctionCall(function_name, args)
+        while True:
+            args.append(parse_expression())
+            if peek().text == ")":
+                break
+            if peek().text == ",":
+                consume(",")
+        consume(')')
+        return ast.FunctionCall(function_name, args)
     
     # the parsing function
     def parse_factor() -> ast.Expression:

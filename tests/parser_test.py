@@ -148,4 +148,43 @@ def test_nested_if_clauses() -> None:
     ),
     else_clause=ast.Literal(6)
     )
+
+def test_function_call() -> None:
+  assert parse(tokenize("my_function(a)")) == ast.FunctionCall(
+    name=ast.Identifier("my_function"),
+    arguments=[ast.Identifier("a")]
+  )
+
+  assert parse(tokenize("my_function(a, b)")) == ast.FunctionCall(
+    name=ast.Identifier("my_function"),
+    arguments=[ast.Identifier("a"), ast.Identifier("b")]
+  )
+
+  assert parse(tokenize("f(x, y + z)")) == ast.FunctionCall(
+    name=ast.Identifier("f"),
+    arguments=[ast.Identifier("x"), ast.BinaryOp(
+      left=ast.Identifier("y"),
+      op="+",
+      right=ast.Identifier("z")
+    )])
   
+  assert parse(tokenize("f(x + y, g(z))")) == ast.FunctionCall(
+    name=ast.Identifier("f"),
+    arguments=[
+      ast.BinaryOp(ast.Identifier("x"), "+", ast.Identifier("y")),
+      ast.FunctionCall(ast.Identifier("g"), [ast.Identifier("z")])
+    ])
+  
+  assert parse(tokenize("f(1, 2 * 3)")) == ast.FunctionCall(
+    name=ast.Identifier("f"),
+    arguments=[ast.Literal(1), ast.BinaryOp(
+      left=ast.Literal(2),
+      op="*",
+      right=ast.Literal(3)
+    )])
+  
+  # empty, no arguments
+  assert parse(tokenize("my_function()")) == ast.FunctionCall(
+    name=ast.Identifier("my_function"),
+    arguments=[]
+  )
