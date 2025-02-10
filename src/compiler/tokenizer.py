@@ -33,7 +33,7 @@ def tokenize(source_code: str) -> list[Token]:
     re.compile(r"//.*|#.*"): "comment",
     re.compile(r"[0-9]+"): "int_literal",
     re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*"): "identifier",
-    re.compile(r"==|!=|<=|>=|=|<|>|\+|\-|\*|\/"): "operator",
+    re.compile(r"==|!=|<=|>=|=|<|>|\+|\-|\*|\/|%"): "operator",
     re.compile(r"[(){},;]"): "punctuation",
   }
 

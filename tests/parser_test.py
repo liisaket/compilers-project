@@ -188,3 +188,124 @@ def test_function_call() -> None:
     name=ast.Identifier("my_function"),
     arguments=[]
   )
+
+def test_more_operators() -> None:
+  assert parse(tokenize("1 == 1")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="==",
+    right=ast.Literal(1)
+  )
+  assert parse(tokenize("2 > 1")) == ast.BinaryOp(
+    left=ast.Literal(2),
+    op=">",
+    right=ast.Literal(1)
+  )
+  assert parse(tokenize("1 < 2")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="<",
+    right=ast.Literal(2)
+  )
+  assert parse(tokenize("1 != 2")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="!=",
+    right=ast.Literal(2)
+  )
+  assert parse(tokenize("1 and 2")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="and",
+    right=ast.Literal(2)
+  )
+  assert parse(tokenize("1 or 2")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="or",
+    right=ast.Literal(2)
+  )
+  assert parse(tokenize("1 >= 1 <= 1")) == ast.BinaryOp(
+    left=ast.BinaryOp(
+      left=ast.Literal(1),
+      op=">=",
+      right=ast.Literal(1)
+    ),
+    op="<=",
+    right=ast.Literal(1)
+  )
+  assert parse(tokenize("1%1")) == ast.BinaryOp(
+    left=ast.Literal(1),
+    op="%",
+    right=ast.Literal(1)
+  )
+
+def test_unary_not() -> None:
+  assert parse(tokenize("not x")) == ast.UnaryOp(
+    op="not",
+    value=ast.Identifier("x")
+  )
+  assert parse(tokenize("not 1")) == ast.UnaryOp(
+    op="not",
+    value=ast.Literal(1)
+  )
+  assert parse(tokenize("not not x")) == ast.UnaryOp(
+    op="not",
+    value=ast.UnaryOp("not", ast.Identifier("x"))
+  )
+  assert parse(tokenize("not (x and y)")) == ast.UnaryOp(
+    op="not",
+    value=ast.BinaryOp(
+      left=ast.Identifier("x"),
+      op="and",
+      right=ast.Identifier("y")
+  ))
+
+def test_unary_minus() -> None:
+  assert parse(tokenize("-x")) == ast.UnaryOp(
+    op="-",
+    value=ast.Identifier("x")
+  )
+  assert parse(tokenize("--x")) == ast.UnaryOp(
+    op="-",
+    value=ast.UnaryOp("-", ast.Identifier("x"))
+  )
+  assert parse(tokenize("-1 + 2")) == ast.BinaryOp(
+    left=ast.UnaryOp("-", ast.Literal(1)),
+    op="+",
+    right=ast.Literal(2)
+  )
+  assert parse(tokenize("-(1 + 2)")) == ast.UnaryOp(
+    op="-",
+    value=ast.BinaryOp(
+      left=ast.Literal(1),
+      op="+",
+      right=ast.Literal(2)
+  ))
+
+def test_right_associative_operators() -> None:
+  assert parse(tokenize("a = b")) == ast.BinaryOp(
+    left=ast.Identifier("a"),
+    op="=",
+    right=ast.Identifier("b")
+  )
+
+  assert parse(tokenize("a = b = c")) == ast.BinaryOp(
+    left=ast.Identifier("a"),
+    op="=",
+    right=ast.BinaryOp(
+      left=ast.Identifier("b"),
+      op="=",
+      right=ast.Identifier("c")
+    )
+  )
+
+def test_while_clauses() -> None:
+  assert parse(tokenize("while true 1 + 1")) == ast.WhileExpression(
+    cond=ast.Identifier("true"),
+    body=ast.BinaryOp(ast.Literal(1), "+", ast.Literal(1))
+  )
+
+  assert parse(tokenize("while (x < 10) x = x + 1")) == ast.WhileExpression(
+    cond=ast.BinaryOp(ast.Identifier("x"), "<", ast.Literal(10)),
+    body=ast.BinaryOp(
+      ast.Identifier("x"),
+      "=",
+      ast.BinaryOp(ast.Identifier("x"), "+", ast.Literal(1))
+    )
+  )
